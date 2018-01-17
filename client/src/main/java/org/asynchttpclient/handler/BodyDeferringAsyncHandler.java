@@ -134,7 +134,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
   }
 
   @Override
-  public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
+  public State onTrailingHeadersReceived(HttpHeaders headers) {
     responseBuilder.accumulate(headers);
     return State.CONTINUE;
   }
@@ -181,9 +181,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     try {
       semaphore.acquire();
       if (throwable != null) {
-        IOException ioe = new IOException(throwable.getMessage());
-        ioe.initCause(throwable);
-        throw ioe;
+        throw new IOException(throwable);
       } else {
         // sending out current response
         return responseBuilder.build();
@@ -258,14 +256,8 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
       // "join" async request
       try {
         getLastResponse();
-      } catch (ExecutionException e) {
-        IOException ioe = new IOException(e.getMessage());
-        ioe.initCause(e.getCause());
-        throw ioe;
-      } catch (InterruptedException e) {
-        IOException ioe = new IOException(e.getMessage());
-        ioe.initCause(e);
-        throw ioe;
+      } catch (ExecutionException | InterruptedException e) {
+        throw new IOException(e);
       }
     }
 
